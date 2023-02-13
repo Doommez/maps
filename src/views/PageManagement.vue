@@ -10,7 +10,6 @@
         <base-input v-model="currentFilter" />
       </template>
     </v-select>
-    <div class="actions" />
     <base-block>
       <management-tabs
         v-model="windowActive"
