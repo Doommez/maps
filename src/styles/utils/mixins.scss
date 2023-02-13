@@ -1,0 +1,97 @@
+@use "variables";
+
+@mixin font-color {
+  color: variables.$grey-dark
+}
+
+@mixin font-h1-bold {
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 26px;
+  @include font-color;
+}
+
+@mixin font-h1-regular {
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 26px;
+  @include font-color;
+}
+
+@mixin font-h2-bold {
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 26px;
+  @include font-color;
+}
+
+
+@mixin font-h2-regular {
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 26px;
+  @include font-color;
+}
+
+
+@mixin font-h3-semi-bold {
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 25px;
+  @include font-color;
+}
+
+@mixin font-h3-semi-bold {
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 24px;
+  @include font-color;
+}
+
+@mixin text-lg-bold {
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 24px;
+  @include font-color;
+}
+
+@mixin text-lg-regular {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 24px;
+  @include font-color;
+}
+
+@mixin text-md-semi-bold {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+  @include font-color;
+}
+
+@mixin text-sm-bold {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  @include font-color;
+}
+
+@mixin text-link {
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 24px;
+  color: variables.$green;
+}
+
+@mixin button-icon{
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  background: variables.$grey-lighter;
+  border-radius: 4px;
+  transition: all 0.3s;
+  @include font-h1-regular;
+  &:hover{
+    background: variables.$grey-mid-lite;
+  }
+}

@@ -1,0 +1,7 @@
+@use 'src/styles/utils/variables';
+
+.block {
+  background-color: variables.$white;
+  border-radius: 10px;
+  padding: 24px;
+}

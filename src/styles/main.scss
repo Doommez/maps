@@ -1,0 +1,97 @@
+@use './utils/fonts';
+@use './utils/mixins';
+@use './utils/variables';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Nunito', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+}
+
+html, body, #app {
+  height: 100%;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-gap: 25px;
+  margin-bottom: 32px;
+}
+
+.tab-editing {
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  justify-content: center;
+  min-width: 700px;
+
+  &__content-tab {
+    border-radius: 5px;
+    background-color: variables.$white;
+    width: 100%;
+    padding: 24px 24px 27px;
+  }
+
+  &__separator-tab {
+    margin: 24px 0 16px;
+    display: flex;
+    justify-content: start;
+    width: 100%;
+  }
+}
+
+.content-tab {
+  &__header {
+    column-gap: 16px;
+  }
+}
+
+.header-tab {
+  &__icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-row: 1/3;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: variables.$grey-lighter;
+    color: variables.$purple;
+    justify-self: center;
+  }
+
+  &__title {
+    @include mixins.font-h1-bold;
+  }
+}
+
+.separator-tab {
+  &__line {
+    width: 20px;
+    height: 3px;
+    background-color: variables.$green;
+    justify-self: start;
+    align-self: center;
+    margin-right: 12px;
+    border-radius: 3px;
+  }
+  .point{
+    position: absolute;
+    transform: translate(-50%,-50%);
+    min-width: 50px;
+    min-height: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    &:hover{
+      background: #5ce28c;
+    }
+  }
+
+  &__text {
+    @include mixins.font-h3-semi-bold;
+  }
+}
