@@ -2,7 +2,7 @@ import {ref} from 'vue';
 
 const maps = ref([
   {
-    url: '../src/assets/floor_4.png',
+    url: '../public/floor_4.png',
     floor: 4,
     points: [
       {
@@ -18,7 +18,7 @@ const maps = ref([
     ],
   },
   {
-    url: '../src/assets//floor_5.png',
+    url: '../public/floor_5.png',
     floor: 5,
     points: [
       {
@@ -34,7 +34,7 @@ const maps = ref([
     ],
   },
   {
-    url: '../src/assets//floor_7.png',
+    url: '../public/floor_7.png',
     floor: 7,
     points: [
       {
@@ -50,7 +50,7 @@ const maps = ref([
     ],
   },
   {
-    url: '../src/assets//floor_9.png',
+    url: '../public/floor_9.png',
     floor: 9,
     points: [
       {
@@ -66,7 +66,7 @@ const maps = ref([
     ],
   },
   {
-    url: '../src/assets//floor_10.png',
+    url: '../public/floor_10.png',
     floor: 10,
     points: [
       {
