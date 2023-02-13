@@ -25,7 +25,7 @@ export const useAuth = () => {
       router.push({path: router.currentRoute.value.query.nextUrl});
       return;
     }
-    router.push({name: 'booking'});
+    router.push({name: 'nav'});
   };
 
   const logout = (router) => {

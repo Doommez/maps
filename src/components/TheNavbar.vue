@@ -10,7 +10,7 @@
     >
       <div class="navbar">
         <router-link
-          to="/"
+          to="/maps/"
           class="navbar__img"
         >
           <img

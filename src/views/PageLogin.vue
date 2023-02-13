@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-page__header header">
       <router-link
-        to="/"
+        to="/maps/"
         class="header__logo logo"
       >
         <img

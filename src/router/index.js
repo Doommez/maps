@@ -12,7 +12,7 @@ import {LAYOUT_EMPTY} from '../constants/layouts';
 
 const routes = [
   {
-    path: '/',
+    path: '/maps/',
     component: MainPage,
     name: 'home',
     meta: {
@@ -24,7 +24,7 @@ const routes = [
     },
   },
   {
-    path: '/nav',
+    path: '/maps/nav',
     component: PageDashBoard,
     name: 'nav',
     meta: {
@@ -37,7 +37,7 @@ const routes = [
     },
   },
   {
-    path: '/office',
+    path: '/maps/office',
     component: PageManagement,
     name: 'bookingManagement',
     meta: {
