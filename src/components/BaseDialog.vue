@@ -8,13 +8,16 @@
       <div class="content__title">
         <div>{{ title }}</div>
         <div class="content__title_cancel">
-          <button @click="closeDialog">
+          <button @click="isOpen = false">
             <v-icon icon="mdi-close" />
           </button>
         </div>
       </div>
 
-      <div class="content__body">
+      <div
+        class="content__body"
+        :style="styles"
+      >
         <slot />
       </div>
       <div class="content__footer footer">
@@ -24,7 +27,7 @@
               v-if="isShownCancelButton"
               theme="secondary"
               class="footer__action_cancel"
-              @click="closeDialog"
+              @click="isOpen = false"
             >
               {{ cancelButtonText }}
             </base-button>
@@ -43,7 +46,7 @@
 </template>
 
 <script setup>
-  import {computed} from 'vue';
+  import {computed, onBeforeUnmount} from 'vue';
   import BaseButton from './BaseButton.vue';
 
   const props = defineProps({
@@ -79,7 +82,16 @@
       type: String,
       default: '',
     },
+    scrollable: {
+      type: Boolean,
+      default: false,
+    },
+    height: {
+      type: String,
+      default: 'auto',
+    },
   });
+
   const emits = defineEmits([
     'confirm', 'update:isDialogOpen', 'cancel',
   ]);
@@ -93,14 +105,18 @@
     },
   });
 
+  const styles = computed(() => ({
+    height: props.height === 'auto' ? props.height : `${props.height}px`,
+    overflow: props.scrollable ? 'scroll' : 'visible',
+  }));
+
   const confirm = (value) => {
     emits('confirm', value);
   };
 
-  const closeDialog = (value) => {
-    emits('cancel', value);
-    isOpen.value = false;
-  };
+  onBeforeUnmount(() => {
+    emits('cancel');
+  });
 </script>
 
 <style lang="scss" scoped>
@@ -108,7 +124,6 @@
   @use '../styles/utils/variables';
 
   .dialog {
-
     &__content {
       background-color: variables.$white;
       display: flex;
@@ -137,7 +152,6 @@
         button {
           font-size: 18px;
         }
-
         font-size: 18px;
       }
     }

@@ -29,7 +29,7 @@
       router.go(-2);
       return;
     }
-    router.push({name: 'booking'});
+    router.push({name: 'nav'});
   };
 </script>
 

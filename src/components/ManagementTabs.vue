@@ -4,6 +4,7 @@
       v-model="tab"
       class="content__tabs tabs"
       align-tabs="start"
+      direction="vertical"
     >
       <v-tab
         v-for="tabItem in tabsProps"

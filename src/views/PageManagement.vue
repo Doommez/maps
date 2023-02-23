@@ -2,15 +2,20 @@
   <div class="management">
     <v-select
       v-model="currentOptionAfter"
-      :items="filter"
+      :items="search"
       item-props="title"
       label="поиск интурусуещего места"
     >
       <template #prepend-item>
-        <base-input v-model="currentFilter" />
+        <base-input v-model="currentSearch" />
       </template>
     </v-select>
     <base-block>
+      <v-icon
+        icon="mdi-map-marker-plus"
+        class="settings"
+        @click="toggleNewPointDialog()"
+      />
       <management-tabs
         v-model="windowActive"
         :tabs-props="tabs"
@@ -21,21 +26,38 @@
           #[tab.title]
         >
           <div>
-            <img
+            <v-img
               ref="mapField"
               class="map"
-              :src="tab.component"
-              @click="addPoint"
-            >
+              :src="currentMap.url"
+              :style="cursorAdding"
+            />
+            {{ currentMap.component }}
             <div
               v-for="point in points"
               :key="point.id"
               :style="{'top': point.position.y+ '%', 'left': point.position.x + '%'}"
               class="point"
               :class="{'point_active': pointActive === point}"
-              @click="openInfo"
+              @click="toggleDialogInfo(point)"
             >
-              <v-icon icon="mdi-map-marker-question-outline" />
+              <div class="point__name">
+                {{ point.shortName }}
+              </div>
+              <v-icon
+                class="point__icon"
+                :icon="point.icon"
+              />
+            </div>
+            <div
+              v-if="newPoint"
+              class="point newPoint"
+              :style="{'top': newPoint.position.y+ '%', 'left': newPoint.position.x + '%'}"
+            >
+              <v-icon
+                class="point__icon"
+                :icon="newPoint.icon"
+              />
             </div>
           </div>
         </template>
@@ -48,74 +70,97 @@
       <!--          @click="addPoint"-->
       <!--        ></v-carousel-item>-->
       <!--      </v-carousel>-->
-      <base-dialog
-        v-model:is-dialog-open="isOpenPopupInfo"
-        :is-shown-cancel-button="false"
-        :is-shown-confirm-button="false"
-        @cancel="clearTarget"
+      <dialog-edit-point
+        v-if="isOpenPopupInfo"
+        v-model="isOpenPopupInfo"
+        :title="pointActive.name"
+        @cancel="unSelectPoint"
       >
         <template #default>
-          <div>
-            {{ target }}
-          </div>
+          afdasdf
         </template>
-      </base-dialog>
+      </dialog-edit-point>
       <dialog-point-adding
-        v-model="isOpen"
-        @add-point="createPoint"
+        v-if="isOpenDialogAdding"
+        v-model="isOpenDialogAdding"
+        @add-point="fillPoint"
       />
     </base-block>
   </div>
 </template>
 
 <script setup>
-  import { computed, ref} from 'vue';
-  import {useTarget} from '../composables/useTarget';
+  import { computed, onMounted, ref} from 'vue';
+  import apiMaps from '../api/apiMaps';
   import BaseBlock from '../components/BaseBlock';
-  import {useMaps} from '../composables/useMaps';
-  import BaseDialog from '../components/BaseDialog.vue';
   import BaseInput from '../components/BaseInput.vue';
   import ManagementTabs from '../components/ManagementTabs.vue';
   import DialogPointAdding from '../components/DialogPointAdding.vue';
+  import DialogEditPoint from '../components/DialogEditPoint.vue';
+  import {useAddPoint} from '../composables/useAddPoint';
+  import {useLoader} from '../composables/useLoader';
 
-  const {target, setTarget, clearTarget} = useTarget();
-
-  const {maps} = useMaps();
+  // MAP
+  const maps = ref([]);
 
   const mapField = ref(null);
 
+  // TAB
   const tabs = computed(() => maps.value.map((map) => ({
     title: String(map.floor),
     component: map.url,
   })));
 
-  const windowActive = ref(String(maps.value[0].floor));
+  const windowActive = ref('');
 
-  const currentFilter = ref('');
-
-  const newCoords = ref(null);
-
-  const options = computed(() => {
-    if (!newCoords.value) {
-      return maps.value.reduce((acc, map) => {
-        map.points.forEach((point) => {
-          acc.push(point.name);
-        });
-        return acc;
-      }, []);
-    }
+  const currentMap = computed(() => {
+    const mapIndex = maps.value.findIndex((map) => map.floor === parseInt(windowActive.value));
+    return maps.value[mapIndex];
   });
 
-  const filter = computed(() => {
-    if (currentFilter.value) {
-      return options.value.filter((option) => option.toLowerCase().includes(currentFilter.value.toLowerCase()));
-    }
-    return options.value;
+  const points = computed(() => currentMap.value.points.map((point) => point));
+
+  // GET MAPS
+  const {initLoader, stopLoader} = useLoader();
+  const getMaps = async () => {
+    const loaderKey = initLoader();
+    maps.value = await apiMaps.readMaps();
+    stopLoader(loaderKey);
+  };
+
+  onMounted(async () => {
+    await getMaps();
+    windowActive.value = String(maps.value[0].floor);
   });
+
+  // SEARCH OPTION
+  const currentSearch = ref('');
 
   const currentOption = ref('');
 
   const pointActive = ref({});
+
+  const options = computed(() => maps.value.reduce((acc, map) => {
+    map.points.forEach((point) => {
+      acc.push(point.name);
+    });
+    return acc;
+  }, []));
+
+  const search = computed(() => {
+    if (currentSearch.value) {
+      return options.value.filter((option) => option.toLowerCase().includes(currentSearch.value.toLowerCase()));
+    }
+    return options.value;
+  });
+
+  const setNextFloor = (value) => {
+    const mapIndex = maps.value.findIndex((map) => map.points.some((point) => point.name === value));
+    const nextFloor = maps.value[mapIndex];
+    const pointIndex = nextFloor.points.findIndex((points) => points.name === value);
+    pointActive.value = nextFloor.points[pointIndex];
+    windowActive.value = String(nextFloor.floor);
+  };
 
   const currentOptionAfter = computed({
     get() {
@@ -123,66 +168,93 @@
     },
     async set(value) {
       currentOption.value = value;
-      const mapIndex = maps.value.findIndex((map) => map.points.some((point) => point.name === value));
-      const nextFloor = maps.value[mapIndex];
-      const pointIndex = nextFloor.points.findIndex((points) => points.name === value);
-      pointActive.value = nextFloor.points[pointIndex];
-      windowActive.value = String(nextFloor.floor);
-      currentFilter.value = '';
+      setNextFloor(value);
     },
   });
 
-  // const activeFloor = ref(null);
-  const isOpen = ref(false);
+  // ADD NEW POINT
+  const {setPoint, newPoint} = useAddPoint();
 
-  const addPoint = (e) => {
-    const top = (((e.clientY - e.target.getBoundingClientRect().y) / mapField.value.offsetHeight) * 100).toFixed(0);
-    const left = (((e.clientX - e.target.getBoundingClientRect().x) / mapField.value.offsetWidth) * 100).toFixed(0);
-    newCoords.value = {
-      x: left,
-      y: top,
-    };
-    // const rect = mapField.value.getBoundingClientRect();
-    // const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    // const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    isOpen.value = true;
+  const addingCallback = () => {
+    currentMap.value.points.push(newPoint.value);
   };
 
-  const createPoint = (point) => {
-    const newPoint = {
-      ...point,
-      id: Math.random() * 100,
-      position: {
-        x: newCoords.value.x,
-        y: newCoords.value.y,
-      },
-    };
-    const mapIndex = maps.value.findIndex((map) => map.floor === parseInt(windowActive.value));
-    maps.value[mapIndex].points.push(newPoint);
-    isOpen.value = false;
-    newCoords.value = null;
+  const isOpenDialogAdding = ref(false);
+
+  const toggleNewPointDialog = (isOpen = true) => {
+    isOpenDialogAdding.value = isOpen;
   };
 
-  // computed render points
-  const points = computed(() => {
-    if (!newCoords.value) {
-      const mapIndex = maps.value.findIndex((map) => Number(windowActive.value) === map.floor);
-      return maps.value[mapIndex].points.map((point) => {
-        if (point.name) {
-          setTarget(point.description);
-        }
-        return point;
-      });
-    }
-  });
+  const fillPoint = (point) => {
+    toggleNewPointDialog(false);
+    setPoint(mapField.value.image, point, addingCallback);
+  };
 
-  // open info
+  // CURSOR
+  const cursorAdding = computed(() => (newPoint ? {cursor: 'crosshair'} : ''));
+
+  //
   const isOpenPopupInfo = ref(false);
 
-  const openInfo = () => {
-    isOpenPopupInfo.value = true;
+  const selectPoint = (point) => {
+    pointActive.value = point;
   };
 
+  const unSelectPoint = () => {
+    pointActive.value = null;
+  };
+
+  const toggleDialogInfo = (point, isOpen = true) => {
+    selectPoint(point);
+    isOpenPopupInfo.value = isOpen;
+  };
+
+  // POSITIONS
+
+
+  // const activeFloor = ref(null);
+  // const isOpen = ref(false);
+  //
+  // const newCoords = ref(null);
+
+  // const addPoint = (e) => {
+  //   console.log(mapField.value.image);
+  //   const top = (((e.clientY - e.target.getBoundingClientRect().y) / mapField.value.image.offsetHeight) * 100).toFixed(0);
+  //   const left = (((e.clientX - e.target.getBoundingClientRect().x) / mapField.value.image.offsetWidth) * 100).toFixed(0);
+  //   newCoords.value = {
+  //     x: left,
+  //     y: top,
+  //   };
+  //   console.log('left', left, 'top', top);
+  //   // const rect = mapField.value.getBoundingClientRect();
+  //   // const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+  //   // const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  //   // isOpen.value = true;
+  // };
+
+  // const createPoint = (point) => {
+  //   const newPoint = {
+  //     ...point,
+  //     id: Math.random() * 100,
+  //     position: {
+  //       x: newCoords.value.x,
+  //       y: newCoords.value.y,
+  //     },
+  //   };
+  //   const mapIndex = maps.value.findIndex((map) => map.floor === parseInt(windowActive.value));
+  //   maps.value[mapIndex].points.push(newPoint);
+  //   isOpen.value = false;
+  //   newCoords.value = null;
+  // };
+
+
+
+  //
+  // const cursorAdding = computed(() => (newPoint ? {cursor: 'crosshair'} : ''));
+  //
+  // onMounted(() => {
+  //   console.log('onMounted', mapField.value);
+  // });
   // const showPoint = (floor) => {
   //     const field = document.querySelectorAll('.v-window-item--active .v-responsive.v-img');
   //     const arrayFields = Array.from(field)
@@ -230,54 +302,52 @@
   @use "../styles/utils/variables";
   @use 'src/styles/utils/mixins';
 
-
   .content {
     display: grid;
     position: relative;
   }
 
-  :deep(.v-slide-group__content){
-    flex-direction: column;
-  }
-  :deep(.content__tabs .tabs .v-tabs){
-    height: auto;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: center;
-  }
+  //:deep(.v-tab.v-tab){
+  //  min-width: 60px;
+  //}
+  //
+  //:deep(.v-slide-group__content){
+  //  flex-direction: column;
+  //}
+  //:deep(.content__tabs .tabs .v-tabs){
+  //  height: auto;
+  //  flex-direction: column;
+  //  flex-wrap: nowrap;
+  //  align-items: center;
+  //}
   :deep(.v-tabs){
-    position: absolute;
-    top: 300px;
-    left:95%;
+    grid-column: 2/3;
     height: auto;
   }
   :deep(.v-window){
     grid-column: 1/2;
     grid-row: 1/2;
   }
-  :deep(.v-slide-group__container){
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-  :deep(.v-slide-group__content){
-    justify-content: center;
-  }
-  :deep(.v-slide-group__prev){
-    display: none;
-  }
-  :deep(.v-slide-group__next){
-    display: none;
-  }
+  //:deep(.v-slide-group__container){
+  //  flex-direction: column;
+  //  justify-content: center;
+  //  align-items: center;
+  //}
+  //:deep(.v-slide-group__content){
+  //  justify-content: center;
+  //  max-width: 60px;
+  //}
+  //:deep(.v-slide-group__prev){
+  //  display: none;
+  //}
+  //:deep(.v-slide-group__next){
+  //  display: none;
+  //}
 
-  .map{
-    width: 100%;
-  }
   .content{
     display: grid;
     grid-template-columns: 1fr 60px;
   }
-
   //:deep(.v-carousel__controls) {
   //  bottom: 0;
   //  list-style-type: none;
@@ -320,16 +390,40 @@
     position: absolute;
     transform: translate(-50%, -50%);
     cursor: pointer;
-    font-size: 20px;
-    transition: all 0.3s ease;
+    font-size: 16px;
+    transition: font-size 0.3s ease, color 0.3s ease;
+    max-width: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    &__name{
+      @include mixins.text-sm-bold;
+      font-size: 8px;
+      transition: font-size 0.5s ease;
+    }
 
     &:hover {
-      color: #337e4e;
+      color: variables.$green;
+      font-size: 20px;
+      .point__name{
+        font-size: 12px;
+      }
     }
     &_active {
-      color: purple ;
-      font-size: 40px;
+      color: variables.$purple ;
+      font-size: 30px;
     }
   }
 
+  .settings{
+    @include mixins.button-icon;
+  }
+
+  .newPoint{
+    &:after{
+      content: '';
+
+    }
+  }
 </style>
